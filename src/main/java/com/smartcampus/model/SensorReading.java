@@ -3,13 +3,13 @@ package com.smartcampus.model;
 public class SensorReading {
 
     private String id;
-    private String timestamp;
+    private long timestamp;
     private Double value;
 
     public SensorReading() {
     }
 
-    public SensorReading(String id, String timestamp, Double value) {
+    public SensorReading(String id, long timestamp, Double value) {
         this.id = id;
         this.timestamp = timestamp;
         this.value = value;
@@ -23,11 +23,11 @@ public class SensorReading {
         this.id = id;
     }
 
-    public String getTimestamp() {
+    public long getTimestamp() {
         return timestamp;
     }
 
-    public void setTimestamp(String timestamp) {
+    public void setTimestamp(long timestamp) {
         this.timestamp = timestamp;
     }
 

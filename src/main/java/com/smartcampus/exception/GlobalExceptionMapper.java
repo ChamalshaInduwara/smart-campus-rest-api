@@ -12,7 +12,7 @@ public class GlobalExceptionMapper implements ExceptionMapper<Throwable> {
     public Response toResponse(Throwable exception) {
         ApiError error = new ApiError(
                 "Internal server error",
-                exception.getMessage() == null ? "Unexpected error occurred" : exception.getMessage(),
+            "An unexpected error occurred",
                 Response.Status.INTERNAL_SERVER_ERROR.getStatusCode()
         );
 

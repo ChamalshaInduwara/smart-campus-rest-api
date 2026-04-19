@@ -6,3 +6,47 @@
 [INFO] --------------------------------[ jar ]---------------------------------
 [INFO] 
 [INFO] --- exec:3.5.0:java (default-cli) @ smart-campus-rest-api ---
+[WARNING] 
+jakarta.ws.rs.ProcessingException: Failed to start Grizzly HTTP server: Address already in use: bind
+    at org.glassfish.jersey.grizzly2.httpserver.GrizzlyHttpServerFactory.createHttpServer (GrizzlyHttpServerFactory.java:332)
+    at org.glassfish.jersey.grizzly2.httpserver.GrizzlyHttpServerFactory.createHttpServer (GrizzlyHttpServerFactory.java:98)
+    at com.smartcampus.config.ServerLauncher.startServer (ServerLauncher.java:18)
+    at com.smartcampus.config.ServerLauncher.main (ServerLauncher.java:25)
+    at org.codehaus.mojo.exec.ExecJavaMojo.doMain (ExecJavaMojo.java:375)
+    at org.codehaus.mojo.exec.ExecJavaMojo.doExec (ExecJavaMojo.java:364)
+    at org.codehaus.mojo.exec.ExecJavaMojo.lambda$execute$0 (ExecJavaMojo.java:286)
+    at java.lang.Thread.run (Thread.java:840)
+Caused by: java.net.BindException: Address already in use: bind
+    at sun.nio.ch.Net.bind0 (Native Method)
+    at sun.nio.ch.Net.bind (Net.java:567)
+    at sun.nio.ch.ServerSocketChannelImpl.netBind (ServerSocketChannelImpl.java:337)
+    at sun.nio.ch.ServerSocketChannelImpl.bind (ServerSocketChannelImpl.java:294)
+    at sun.nio.ch.ServerSocketAdaptor.bind (ServerSocketAdaptor.java:89)
+    at org.glassfish.grizzly.nio.transport.TCPNIOBindingHandler.bindToChannelAndAddress (TCPNIOBindingHandler.java:95)
+    at org.glassfish.grizzly.nio.transport.TCPNIOBindingHandler.bind (TCPNIOBindingHandler.java:63)
+    at org.glassfish.grizzly.nio.transport.TCPNIOTransport.bind (TCPNIOTransport.java:224)
+    at org.glassfish.grizzly.nio.transport.TCPNIOTransport.bind (TCPNIOTransport.java:207)
+    at org.glassfish.grizzly.nio.transport.TCPNIOTransport.bind (TCPNIOTransport.java:199)
+    at org.glassfish.grizzly.http.server.NetworkListener.start (NetworkListener.java:740)
+    at org.glassfish.grizzly.http.server.HttpServer.start (HttpServer.java:234)
+    at org.glassfish.jersey.grizzly2.httpserver.GrizzlyHttpServerFactory.createHttpServer (GrizzlyHttpServerFactory.java:329)
+    at org.glassfish.jersey.grizzly2.httpserver.GrizzlyHttpServerFactory.createHttpServer (GrizzlyHttpServerFactory.java:98)
+    at com.smartcampus.config.ServerLauncher.startServer (ServerLauncher.java:18)
+    at com.smartcampus.config.ServerLauncher.main (ServerLauncher.java:25)
+    at org.codehaus.mojo.exec.ExecJavaMojo.doMain (ExecJavaMojo.java:375)
+    at org.codehaus.mojo.exec.ExecJavaMojo.doExec (ExecJavaMojo.java:364)
+    at org.codehaus.mojo.exec.ExecJavaMojo.lambda$execute$0 (ExecJavaMojo.java:286)
+    at java.lang.Thread.run (Thread.java:840)
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD FAILURE
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  1.690 s
+[INFO] Finished at: 2026-04-20T01:46:50+05:30
+[INFO] ------------------------------------------------------------------------
+[ERROR] Failed to execute goal org.codehaus.mojo:exec-maven-plugin:3.5.0:java (default-cli) on project smart-campus-rest-api: An exception occurred while executing the Java class. Failed to start Grizzly HTTP server: Address already in use: bind -> [Help 1]
+[ERROR] 
+[ERROR] To see the full stack trace of the errors, re-run Maven with the -e switch.
+[ERROR] Re-run Maven using the -X switch to enable full debug logging.
+[ERROR] 
+[ERROR] For more information about the errors and possible solutions, please read the following articles:
+[ERROR] [Help 1] http://cwiki.apache.org/confluence/display/MAVEN/MojoExecutionException

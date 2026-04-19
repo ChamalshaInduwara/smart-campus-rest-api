@@ -1,11 +1,2 @@
-Apr 20, 2026 1:09:28 AM org.glassfish.jersey.server.wadl.WadlFeature configure
+Apr 20, 2026 1:46:50 AM org.glassfish.jersey.server.wadl.WadlFeature configure
 WARNING: JAXBContext implementation could not be found. WADL feature is disabled.
-Apr 20, 2026 1:09:28 AM org.glassfish.grizzly.http.server.NetworkListener start
-INFO: Started listener bound to [0.0.0.0:8080]
-Apr 20, 2026 1:09:28 AM org.glassfish.grizzly.http.server.HttpServer start
-INFO: [HttpServer] Started.
-Apr 20, 2026 1:09:28 AM com.smartcampus.config.ServerLauncher main
-INFO: Smart Campus API started at http://0.0.0.0:8080/api/v1
-Apr 20, 2026 1:09:28 AM com.smartcampus.config.ServerLauncher main
-INFO: Press Enter to stop the server...
-^C

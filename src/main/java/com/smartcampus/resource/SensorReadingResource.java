@@ -13,7 +13,6 @@ import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
-import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 
@@ -51,7 +50,7 @@ public class SensorReadingResource {
 
         if (reading == null || reading.getValue() == null) {
             return Response.status(Response.Status.BAD_REQUEST)
-                .entity(new ApiError("Invalid request", "Reading body with value is required", 400))
+                    .entity(new ApiError("Invalid request", "Reading body with value is required", 400))
                     .build();
         }
 
@@ -59,8 +58,8 @@ public class SensorReadingResource {
             reading.setId(UUID.randomUUID().toString());
         }
 
-        if (reading.getTimestamp() == null || reading.getTimestamp().isBlank()) {
-            reading.setTimestamp(Instant.now().toString());
+        if (reading.getTimestamp() <= 0) {
+            reading.setTimestamp(System.currentTimeMillis());
         }
 
         List<SensorReading> readings = DataStore.getOrCreateReadingsForSensor(sensorId);

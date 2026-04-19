@@ -32,6 +32,10 @@ It is designed to demonstrate RESTful design, HTTP method usage, exception mappi
 
    mvn clean compile
 
+Or compile and run all automated tests:
+
+mvn clean test
+
 3. Start the server using the configured Maven execution:
 
    mvn exec:java
@@ -104,7 +108,7 @@ Discovery endpoint:
 
     curl -X POST http://localhost:8080/api/v1/sensors/sensor-1/readings \
       -H "Content-Type: application/json" \
-    -d "{\"id\":\"reading-1\",\"timestamp\":\"2026-04-20T10:00:00Z\",\"value\":550.5}"
+      -d "{\"id\":\"reading-1\",\"timestamp\":1713607200000,\"value\":550.5}"
 
 ### 7) Delete room
 
@@ -143,3 +147,19 @@ This helps with debugging, endpoint verification, and viva demonstration.
 - All data is stored in memory using HashMap and ArrayList.
 - No database is used.
 - The project is intentionally simple and designed for coursework demonstration and viva explanation.
+
+## Quality Assurance
+
+The project includes automated API tests to validate core coursework rules:
+
+- Discovery endpoint response structure.
+- Sensor creation requires a valid roomId.
+- Sensor is linked into room sensorIds.
+- Reading accepts long timestamp (epoch milliseconds).
+- Reading updates sensor currentValue.
+- MAINTENANCE sensors reject reading POST (403).
+- Rooms with assigned sensors cannot be deleted (409).
+
+Run test suite:
+
+mvn test
