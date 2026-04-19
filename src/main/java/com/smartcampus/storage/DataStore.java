@@ -15,6 +15,10 @@ public final class DataStore {
     private static final Map<String, Sensor> SENSORS = new HashMap<>();
     private static final Map<String, List<SensorReading>> READINGS = new HashMap<>();
 
+    static {
+        seedDefaultRooms();
+    }
+
     private DataStore() {
     }
 
@@ -38,5 +42,16 @@ public final class DataStore {
         ROOMS.clear();
         SENSORS.clear();
         READINGS.clear();
+    }
+
+    private static void seedDefaultRooms() {
+        addSeedRoom("room-101", "Lab 101", 40);
+        addSeedRoom("room-102", "Lecture Hall", 100);
+    }
+
+    private static void addSeedRoom(String id, String name, int capacity) {
+        if (!ROOMS.containsKey(id)) {
+            ROOMS.put(id, new Room(id, name, capacity, new ArrayList<>()));
+        }
     }
 }
