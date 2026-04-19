@@ -10,8 +10,10 @@ import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.UriInfo;
 
 import java.util.List;
 import java.util.UUID;
@@ -38,7 +40,7 @@ public class SensorReadingResource {
     }
 
     @POST
-    public Response addReading(SensorReading reading) {
+    public Response addReading(SensorReading reading, @Context UriInfo uriInfo) {
         Sensor sensor = DataStore.getSensors().get(sensorId);
         if (sensor == null) {
             throw new LinkedResourceNotFoundException("Cannot add reading: sensor not found for sensorId=" + sensorId);
@@ -54,18 +56,29 @@ public class SensorReadingResource {
                     .build();
         }
 
+        if (reading.getTimestamp() <= 0) {
+            return Response.status(Response.Status.BAD_REQUEST)
+                    .entity(new ApiError("Invalid request", "timestamp must be a positive epoch milliseconds value", 400))
+                    .build();
+        }
+
         if (reading.getId() == null || reading.getId().isBlank()) {
             reading.setId(UUID.randomUUID().toString());
         }
 
-        if (reading.getTimestamp() <= 0) {
-            reading.setTimestamp(System.currentTimeMillis());
+        List<SensorReading> readings = DataStore.getOrCreateReadingsForSensor(sensorId);
+        boolean duplicateReadingId = readings.stream().anyMatch(existing -> reading.getId().equals(existing.getId()));
+        if (duplicateReadingId) {
+            return Response.status(Response.Status.CONFLICT)
+                    .entity(new ApiError("Reading already exists", "Reading ID already in use for this sensor", 409))
+                    .build();
         }
 
-        List<SensorReading> readings = DataStore.getOrCreateReadingsForSensor(sensorId);
         readings.add(reading);
 
         sensor.setCurrentValue(reading.getValue());
-        return Response.status(Response.Status.CREATED).entity(reading).build();
+        return Response.created(uriInfo.getAbsolutePathBuilder().path(reading.getId()).build())
+                .entity(reading)
+                .build();
     }
 }

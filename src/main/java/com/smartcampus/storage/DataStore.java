@@ -33,4 +33,10 @@ public final class DataStore {
     public static List<SensorReading> getOrCreateReadingsForSensor(String sensorId) {
         return READINGS.computeIfAbsent(sensorId, key -> new ArrayList<>());
     }
+
+    public static void clearAll() {
+        ROOMS.clear();
+        SENSORS.clear();
+        READINGS.clear();
+    }
 }

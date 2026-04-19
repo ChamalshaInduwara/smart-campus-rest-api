@@ -12,19 +12,24 @@ import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.QueryParam;
+import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.UriInfo;
 
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 
 @Path("/sensors")
 @Consumes(MediaType.APPLICATION_JSON)
 @Produces(MediaType.APPLICATION_JSON)
 public class SensorResource {
+
+    private static final Set<String> ALLOWED_STATUSES = Set.of("ACTIVE", "MAINTENANCE");
 
     @GET
     public Collection<Sensor> getSensors(@QueryParam("type") String type) {
@@ -42,8 +47,21 @@ public class SensorResource {
         return filtered;
     }
 
+    @GET
+    @Path("/{sensorId}")
+    public Response getSensorById(@PathParam("sensorId") String sensorId) {
+        Sensor sensor = DataStore.getSensors().get(sensorId);
+        if (sensor == null) {
+            return Response.status(Response.Status.NOT_FOUND)
+                    .entity(new ApiError("Sensor not found", "No sensor with ID: " + sensorId, 404))
+                    .build();
+        }
+
+        return Response.ok(sensor).build();
+    }
+
     @POST
-    public Response createSensor(Sensor sensor) {
+    public Response createSensor(Sensor sensor, @Context UriInfo uriInfo) {
         if (sensor == null) {
             return Response.status(Response.Status.BAD_REQUEST)
                     .entity(new ApiError("Invalid request", "Sensor body is required", 400))
@@ -53,6 +71,12 @@ public class SensorResource {
         if (sensor.getRoomId() == null || sensor.getRoomId().isBlank()) {
             return Response.status(Response.Status.BAD_REQUEST)
                     .entity(new ApiError("Invalid request", "roomId is required", 400))
+                    .build();
+        }
+
+        if (sensor.getType() == null || sensor.getType().isBlank()) {
+            return Response.status(Response.Status.BAD_REQUEST)
+                    .entity(new ApiError("Invalid request", "Sensor type is required", 400))
                     .build();
         }
 
@@ -69,6 +93,17 @@ public class SensorResource {
             sensor.setStatus("ACTIVE");
         }
 
+        sensor.setStatus(sensor.getStatus().toUpperCase());
+        if (!ALLOWED_STATUSES.contains(sensor.getStatus())) {
+            return Response.status(Response.Status.BAD_REQUEST)
+                    .entity(new ApiError("Invalid request", "status must be ACTIVE or MAINTENANCE", 400))
+                    .build();
+        }
+
+        if (sensor.getCurrentValue() == null) {
+            sensor.setCurrentValue(0.0);
+        }
+
         Map<String, Sensor> sensors = DataStore.getSensors();
         if (sensors.containsKey(sensor.getId())) {
             return Response.status(Response.Status.CONFLICT)
@@ -78,9 +113,16 @@ public class SensorResource {
 
         sensors.put(sensor.getId(), sensor);
         DataStore.getOrCreateReadingsForSensor(sensor.getId());
-        room.getSensorIds().add(sensor.getId());
+        if (room.getSensorIds() == null) {
+            room.setSensorIds(new ArrayList<>());
+        }
+        if (!room.getSensorIds().contains(sensor.getId())) {
+            room.getSensorIds().add(sensor.getId());
+        }
 
-        return Response.status(Response.Status.CREATED).entity(sensor).build();
+        return Response.created(uriInfo.getAbsolutePathBuilder().path(sensor.getId()).build())
+                .entity(sensor)
+                .build();
     }
 
     @Path("/{sensorId}/readings")

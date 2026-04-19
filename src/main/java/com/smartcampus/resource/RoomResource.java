@@ -11,9 +11,12 @@ import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.UriInfo;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Map;
 import java.util.UUID;
@@ -29,10 +32,28 @@ public class RoomResource {
     }
 
     @POST
-    public Response createRoom(Room room) {
+    public Response createRoom(Room room, @Context UriInfo uriInfo) {
         if (room == null) {
             return Response.status(Response.Status.BAD_REQUEST)
                     .entity(new ApiError("Invalid request", "Room body is required", 400))
+                    .build();
+        }
+
+        if (room.getName() == null || room.getName().isBlank()) {
+            return Response.status(Response.Status.BAD_REQUEST)
+                    .entity(new ApiError("Invalid request", "Room name is required", 400))
+                    .build();
+        }
+
+        if (room.getCapacity() <= 0) {
+            return Response.status(Response.Status.BAD_REQUEST)
+                    .entity(new ApiError("Invalid request", "Room capacity must be greater than 0", 400))
+                    .build();
+        }
+
+        if (room.getSensorIds() != null && !room.getSensorIds().isEmpty()) {
+            return Response.status(Response.Status.BAD_REQUEST)
+                    .entity(new ApiError("Invalid request", "sensorIds must be empty on room creation", 400))
                     .build();
         }
 
@@ -40,9 +61,7 @@ public class RoomResource {
             room.setId(UUID.randomUUID().toString());
         }
 
-        if (room.getSensorIds() == null) {
-            room.setSensorIds(new java.util.ArrayList<>());
-        }
+        room.setSensorIds(new ArrayList<>());
 
         Map<String, Room> rooms = DataStore.getRooms();
         if (rooms.containsKey(room.getId())) {
@@ -52,7 +71,9 @@ public class RoomResource {
         }
 
         rooms.put(room.getId(), room);
-        return Response.status(Response.Status.CREATED).entity(room).build();
+        return Response.created(uriInfo.getAbsolutePathBuilder().path(room.getId()).build())
+                .entity(room)
+                .build();
     }
 
     @GET
@@ -78,11 +99,20 @@ public class RoomResource {
                     .build();
         }
 
-        if (room.getSensorIds() != null && !room.getSensorIds().isEmpty()) {
-            throw new RoomNotEmptyException("Cannot delete room because sensors are still assigned");
+        if (hasLinkedSensors(roomId, room)) {
+            throw new RoomNotEmptyException("Cannot delete room because one or more sensors are still assigned");
         }
 
         DataStore.getRooms().remove(roomId);
-        return Response.ok(Map.of("message", "Room deleted successfully", "roomId", roomId)).build();
+        return Response.noContent().build();
+    }
+
+    private boolean hasLinkedSensors(String roomId, Room room) {
+        if (room.getSensorIds() != null && !room.getSensorIds().isEmpty()) {
+            return true;
+        }
+
+        return DataStore.getSensors().values().stream()
+                .anyMatch(sensor -> roomId.equals(sensor.getRoomId()));
     }
 }
