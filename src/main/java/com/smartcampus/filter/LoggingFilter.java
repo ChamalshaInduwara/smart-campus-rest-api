@@ -1,13 +1,13 @@
 package com.smartcampus.filter;
 
+import java.io.IOException;
+import java.util.logging.Logger;
+
 import jakarta.ws.rs.container.ContainerRequestContext;
 import jakarta.ws.rs.container.ContainerRequestFilter;
 import jakarta.ws.rs.container.ContainerResponseContext;
 import jakarta.ws.rs.container.ContainerResponseFilter;
 import jakarta.ws.rs.ext.Provider;
-
-import java.io.IOException;
-import java.util.logging.Logger;
 
 @Provider
 public class LoggingFilter implements ContainerRequestFilter, ContainerResponseFilter {
@@ -18,7 +18,7 @@ public class LoggingFilter implements ContainerRequestFilter, ContainerResponseF
     @Override
     public void filter(ContainerRequestContext requestContext) throws IOException {
         requestContext.setProperty(START_TIME_PROPERTY, System.nanoTime());
-        LOGGER.info("Incoming request: " + requestContext.getMethod() + " " + requestContext.getUriInfo().getRequestUri());
+        LOGGER.info(() -> "Incoming request: " + requestContext.getMethod() + " " + requestContext.getUriInfo().getRequestUri());
     }
 
     @Override
@@ -29,10 +29,11 @@ public class LoggingFilter implements ContainerRequestFilter, ContainerResponseF
             durationMs = (System.nanoTime() - startNano) / 1_000_000;
         }
 
-        LOGGER.info("Outgoing response: "
-                + requestContext.getMethod() + " "
-                + requestContext.getUriInfo().getRequestUri()
-                + " -> " + responseContext.getStatus()
-                + (durationMs >= 0 ? " (" + durationMs + " ms)" : ""));
+        final long requestDurationMs = durationMs;
+        LOGGER.info(() -> "Outgoing response: "
+            + requestContext.getMethod() + " "
+            + requestContext.getUriInfo().getRequestUri()
+            + " -> " + responseContext.getStatus()
+            + (requestDurationMs >= 0 ? " (" + requestDurationMs + " ms)" : ""));
     }
 }
