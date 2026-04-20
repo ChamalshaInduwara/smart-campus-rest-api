@@ -1,343 +1,327 @@
-# Smart Campus REST API
+# Smart Campus REST API (JAX-RS)
 
-A coursework-ready Java REST API for smart campus monitoring, implemented with JAX-RS (Jersey) and in-memory data structures only.
+## 1. Project Title
 
-## Overview
+Smart Campus REST API (JAX-RS)
 
-This project demonstrates clean resource-oriented API design for managing rooms, sensors, and sensor readings. It is designed for Client-Server Architectures assessment, with emphasis on:
+## 2. Overview
 
-- Correct HTTP method and status usage
-- Linked-resource validation
-- Sub-resource locator usage
-- Consistent exception-to-HTTP mapping
-- Centralized request/response logging
+This project is a Java 17 REST API for a Smart Campus monitoring scenario, developed for Client-Server Architectures coursework. It is implemented using JAX-RS (Jersey) and demonstrates resource-oriented design, HTTP semantics, exception mapping, and centralized logging.
 
-## Description
+## 3. Description
 
-The API manages three related entities:
+The API manages three core resources:
 
-- Room: physical campus space with capacity and linked sensors
-- Sensor: device assigned to one room
-- SensorReading: measurement history for one sensor
+- Room: a physical campus space with capacity and linked sensor IDs.
+- Sensor: a monitoring device assigned to one room.
+- SensorReading: a timestamped measurement linked to one sensor.
 
-Data is persisted only in memory using HashMap and ArrayList, with no database integration.
+Resource relationships and hierarchy:
 
-## Technology Stack
+- Room -> Sensors: one-to-many relationship represented by `sensorIds` in each room.
+- Sensor -> SensorReadings: one-to-many relationship exposed as a nested resource path.
+- Hierarchical URI design: `/sensors/{sensorId}/readings` models readings as children of a sensor.
+
+## 4. Technology Stack
 
 - Java 17
 - Maven
-- JAX-RS / Jersey 3
+- Jersey (JAX-RS)
 - Grizzly HTTP server
-- Jackson JSON support (via Jersey media module)
-- JUnit 5 + Jersey Test Framework
+- In-memory storage using `HashMap` and `ArrayList`
 
-## Project Structure
+## 5. Project Structure
 
-- src/main/java/com/smartcampus/config
-- src/main/java/com/smartcampus/model
-- src/main/java/com/smartcampus/resource
-- src/main/java/com/smartcampus/storage
-- src/main/java/com/smartcampus/exception
-- src/main/java/com/smartcampus/filter
-- src/test/java/com/smartcampus/resource
+```text
+src/main/java/com/smartcampus/
+├── config/
+│   ├── ServerLauncher.java
+│   └── SmartCampusApplication.java
+├── model/
+│   ├── Room.java
+│   ├── Sensor.java
+│   └── SensorReading.java
+├── resource/
+│   ├── DiscoveryResource.java
+│   ├── RoomResource.java
+│   ├── SensorResource.java
+│   └── SensorReadingResource.java
+├── storage/
+│   └── DataStore.java
+├── exception/
+│   ├── ApiError.java
+│   ├── GlobalExceptionMapper.java
+│   ├── LinkedResourceNotFoundException.java
+│   ├── LinkedResourceNotFoundExceptionMapper.java
+│   ├── RoomNotEmptyException.java
+│   ├── RoomNotEmptyExceptionMapper.java
+│   ├── SensorUnavailableException.java
+│   └── SensorUnavailableExceptionMapper.java
+└── filter/
+    └── LoggingFilter.java
+```
 
-## Build, Test, and Run
+## 6. Build and Run Instructions
 
-1. Compile:
+Compile the project:
 
-   mvn clean compile
+```bash
+mvn clean compile
+```
 
-2. Run automated tests:
+Run the server (configured in Maven exec plugin):
 
-   mvn clean test
+```bash
+mvn exec:java
+```
 
-3. Start server (plugin main class configured in pom.xml):
+Run server with explicit main class:
 
-   mvn exec:java
-
-4. Explicit main class command:
-
-   mvn exec:java -Dexec.mainClass="com.smartcampus.config.ServerLauncher"
+```bash
+mvn exec:java -Dexec.mainClass="com.smartcampus.config.ServerLauncher"
+```
 
 Base URL:
 
+```text
 http://localhost:8080/api/v1
+```
 
-## API Design Overview
+## 7. API Design Overview
 
 Base path:
 
-- /api/v1
+- `/api/v1`
 
-Primary resources:
+Resource-based API design:
 
-- /rooms
-- /sensors
-- /sensors/{sensorId}/readings
+- `/rooms` represents room collection and item resources.
+- `/sensors` represents sensor collection and item resources.
+- `/sensors/{sensorId}/readings` represents readings scoped to one sensor.
 
-Design decisions:
+REST principles applied:
 
-- Room to Sensor is one-to-many, represented by sensorIds on room
-- Sensor to SensorReading is one-to-many, exposed using a sub-resource locator
-- Resource linking is validated during writes (for example, sensor roomId must exist)
+- Resource identification through stable URIs.
+- HTTP method semantics: `GET`, `POST`, `DELETE`.
+- Stateless request handling (no server-side session).
+- Representation in JSON using JAX-RS providers.
+- Proper status code usage for success and failure paths.
 
-## Discovery Endpoint
+## 8. Discovery Endpoint
 
 Endpoint:
 
-- GET /api/v1
+- `GET /api/v1`
 
-Returns:
+Returned JSON structure:
 
-- apiName
-- version
-- adminContact
-- resources map containing discoverable links:
-  - self
-  - rooms
-  - sensors
-  - sensorReadings template
+- `apiName`
+- `version`
+- `adminContact`
+- `resources` object containing:
+  - `self`
+  - `rooms`
+  - `sensors`
+  - `sensorReadings`
 
-## Core Endpoint Behavior
-
-### Rooms
-
-- GET /rooms returns all rooms
-- POST /rooms creates room, returns 201 Created and Location header
-- GET /rooms/{roomId} returns one room or 404
-- DELETE /rooms/{roomId} returns:
-  - 204 No Content when deleted
-  - 409 Conflict when sensors are still linked
-
-Validation:
-
-- name is required
-- capacity must be greater than 0
-- sensorIds must be empty on creation (linking is controlled by sensor creation)
-
-### Sensors
-
-- GET /sensors returns all sensors
-- GET /sensors?type=CO2 filters by sensor type
-- GET /sensors/{sensorId} returns one sensor or 404
-- POST /sensors creates sensor, returns 201 Created and Location header
-
-Validation:
-
-- roomId is required and must exist (422 if linked room does not exist)
-- type is required
-- status defaults to ACTIVE if absent
-- allowed statuses are ACTIVE and MAINTENANCE
-- currentValue defaults to 0.0 when absent
-- created sensor ID is linked into room sensorIds
-
-### Sensor Readings (Sub-resource)
-
-- GET /sensors/{sensorId}/readings returns reading history
-- POST /sensors/{sensorId}/readings creates reading, returns 201 Created and Location header
-
-Validation:
-
-- sensor must exist (422 when linked sensor missing)
-- MAINTENANCE sensors reject POST with 403
-- timestamp must be a positive long epoch-milliseconds value
-- reading value is required
-- reading ID must be unique per sensor
-- successful POST updates sensor currentValue
-
-## Working Postman Requests
-
-Use a Postman collection with base URL:
-
-http://localhost:8080/api/v1
-
-Set header Content-Type: application/json for POST requests.
-
-1. Discovery
-
-- Method: GET
-- URL: http://localhost:8080/api/v1
-- Expected status: 200
-
-2. Create room
-
-- Method: POST
-- URL: http://localhost:8080/api/v1/rooms
-- Body (raw JSON):
-
-  {
-  "id": "room-101",
-  "name": "Lab 101",
-  "capacity": 40,
-  "sensorIds": []
-  }
-
-- Expected status: 201
-
-3. Get all rooms
-
-- Method: GET
-- URL: http://localhost:8080/api/v1/rooms
-- Expected status: 200
-
-4. Create sensor linked to room
-
-- Method: POST
-- URL: http://localhost:8080/api/v1/sensors
-- Body (raw JSON):
-
-  {
-  "id": "sensor-1",
-  "type": "CO2",
-  "status": "ACTIVE",
-  "currentValue": 0.0,
-  "roomId": "room-101"
-  }
-
-- Expected status: 201
-
-5. Filter sensors by type
-
-- Method: GET
-- URL: http://localhost:8080/api/v1/sensors?type=CO2
-- Expected status: 200
-
-6. Add reading with long timestamp (epoch ms)
-
-- Method: POST
-- URL: http://localhost:8080/api/v1/sensors/sensor-1/readings
-- Body (raw JSON):
-
-  {
-  "id": "reading-1",
-  "timestamp": 1713607200000,
-  "value": 550.5
-  }
-
-- Expected status: 201
-
-7. Attempt room deletion with linked sensor
-
-- Method: DELETE
-- URL: http://localhost:8080/api/v1/rooms/room-101
-- Expected status: 409
-
-8. Validate unmatched path handling
-
-- Method: GET
-- URLs:
-  - http://localhost:8080/api/v1/abc
-  - http://localhost:8080/api/v1/rooms%20/
-  - http://localhost:8080/api/v1/invalid
-- Expected status: 404
-- Expected body:
-
-  {
-  "error": "Not found",
-  "message": "Requested resource does not exist",
-  "status": 404
-  }
-
-## Error Handling
-
-Consistent JSON error payload:
+Example response:
 
 ```json
 {
-  "error": "<short error>",
-  "message": "<human-readable detail>",
-  "status": 400
+  "apiName": "Smart Campus API",
+  "version": "v1",
+  "adminContact": "admin@smartcampus.local",
+  "resources": {
+    "self": "/api/v1",
+    "rooms": "/api/v1/rooms",
+    "sensors": "/api/v1/sensors",
+    "sensorReadings": "/api/v1/sensors/{id}/readings"
+  }
 }
 ```
 
-Exception mapping:
+HATEOAS explanation (theory):
 
-- RoomNotEmptyException -> 409 Conflict
-- LinkedResourceNotFoundException -> 422 Unprocessable Entity
-- SensorUnavailableException -> 403 Forbidden
-- NotFoundExceptionMapper -> 404 Not Found
-- GlobalExceptionMapper -> 500 Internal Server Error
+The discovery response provides navigable links so clients can discover available resources from the API itself rather than hard-coding all endpoint paths. This improves client decoupling and supports safer API evolution.
 
-Security and robustness note:
+## 9. Room Management
 
-- Global exception responses avoid leaking stack traces or internals to API clients.
+Endpoints:
 
-## Logging
+- `GET /rooms`
+- `POST /rooms`
+- `GET /rooms/{id}`
+- `DELETE /rooms/{id}`
 
-A centralized filter implements:
+Validation rules in `POST /rooms`:
 
-- ContainerRequestFilter: logs incoming method and URI
-- ContainerResponseFilter: logs method, URI, response status, and request duration
+- Body must be present.
+- `name` is required and must not be blank.
+- `capacity` must be greater than 0.
+- `sensorIds` must be empty on creation.
+- If `id` is missing, a UUID is generated.
+- Duplicate room IDs return conflict.
 
-This keeps logging cross-cutting, consistent, and easy to explain in viva.
+DELETE idempotency explanation (theory):
 
-## In-Memory Storage Note
+`DELETE` is idempotent because repeating the same deletion request does not create additional side effects after the room has already been removed. The first call may return `204`, while later calls can return `404`; the final server state remains the same.
 
-This project uses only in-memory structures:
+## 10. Sensor Management
 
-- HashMap for rooms, sensors, and reading buckets
-- ArrayList for room sensorIds and sensor reading history
+Endpoints:
 
-No database, JPA, Hibernate, or repository framework is used.
+- `GET /sensors`
+- `POST /sensors`
+- `GET /sensors?type=...`
 
-## Quality Assurance
+Validation and behavior:
 
-Automated API tests cover key coursework rules:
+- Body must be present.
+- `roomId` is required.
+- `type` is required.
+- `roomId` must reference an existing room; otherwise a linked-resource exception is raised.
+- `status` defaults to `ACTIVE` when missing.
+- Allowed statuses: `ACTIVE`, `MAINTENANCE`.
+- `currentValue` defaults to `0.0` when missing.
+- On successful sensor creation, sensor ID is added to the parent room `sensorIds`.
 
-- Discovery metadata structure
-- Sensor creation requires valid roomId
-- Sensor linking into room sensorIds
-- Reading accepts long timestamp
-- Reading updates sensor currentValue
-- MAINTENANCE sensors reject reading POST (403)
-- Room deletion blocked while linked sensors exist (409)
-- Room deletion returns 204 when room is empty
-- Missing sensor lookup returns 404
-- Duplicate reading ID for same sensor returns 409
-- Room and sensor validation rules
+`@Consumes` behavior explanation (theory):
+
+`@Consumes(MediaType.APPLICATION_JSON)` defines that these endpoints accept JSON payloads. It enforces representation contracts and ensures request entity parsing is performed as JSON by the JAX-RS runtime.
+
+Query parameter vs path parameter explanation (theory):
+
+- Path parameters identify a specific resource (for example, `/sensors/{id}`).
+- Query parameters express filtering or optional constraints on a collection (for example, `/sensors?type=CO2`).
+
+## 11. Sensor Readings (Sub-Resource)
+
+Sub-resource locator pattern:
+
+- `SensorResource` exposes `@Path("/{sensorId}/readings")` and returns a `SensorReadingResource` instance for that sensor context.
+
+Endpoints:
+
+- `GET /sensors/{id}/readings`
+- `POST /sensors/{id}/readings`
+
+Why sub-resources improve design (theory):
+
+- They keep child-resource logic localized to parent context.
+- They produce intuitive hierarchical URIs.
+- They improve cohesion by separating reading-specific behavior from general sensor collection logic.
+
+Current value update behavior:
+
+- After a successful reading POST, the sensor's `currentValue` is immediately updated to the new reading `value`.
+
+## 12. Error Handling
+
+Mapped exception outcomes:
+
+- `RoomNotEmptyException` -> `409 Conflict`
+- `LinkedResourceNotFoundException` -> `422 Unprocessable Entity`
+- `SensorUnavailableException` -> `403 Forbidden`
+- Unhandled exceptions (`Throwable`) -> `500 Internal Server Error`
+
+Other handled API error outcomes in resources include:
+
+- `400 Bad Request` for invalid payload fields.
+- `404 Not Found` for missing room/sensor lookups.
+
+Why `422` is better than `404` for linked-resource validation (theory):
+
+`422` indicates that the request body is syntactically valid but semantically invalid (for example, creating a sensor with a `roomId` that does not exist). `404` is more appropriate when the requested URI resource itself is not found.
+
+Security risk of stack traces (theory):
+
+Returning stack traces to clients can reveal internal class names, packages, and execution paths, increasing attack surface. This project avoids that by returning sanitized JSON error payloads.
+
+Sample JSON error response:
+
+```json
+{
+  "error": "Linked resource not found",
+  "message": "Cannot create sensor: room does not exist for roomId=room-x",
+  "status": 422
+}
+```
+
+## 13. Logging
+
+Request and response logging is implemented with a provider filter that implements both `ContainerRequestFilter` and `ContainerResponseFilter`.
+
+Logged details include:
+
+- Incoming HTTP method and URI.
+- Outgoing status code.
+- End-to-end request duration in milliseconds.
+
+Why filters are better than logging inside each method (theory):
+
+Filters provide cross-cutting behavior in one place, avoiding duplication across resource methods, improving consistency, and reducing maintenance risk.
+
+## 14. HTTP Status Codes
+
+Status codes used by this implementation:
+
+- `200 OK`: successful retrieval operations.
+- `201 Created`: successful room/sensor/reading creation.
+- `204 No Content`: successful room deletion.
+- `400 Bad Request`: invalid request payload or validation failure.
+- `403 Forbidden`: reading submission blocked for sensor in MAINTENANCE.
+- `404 Not Found`: requested room or sensor not found.
+- `409 Conflict`: duplicate identifiers or deleting room with linked sensors.
+- `422 Unprocessable Entity`: linked referenced resource missing.
+- `500 Internal Server Error`: unhandled server-side exceptions.
+
+## 15. API Testing (Postman)
+
+Primary testing tool used:
+
+- Postman was used for manual endpoint testing and demo validation.
+- Collection file: `Smart-Campus-API.postman_collection.json` (project root).
+
+Postman test flow used:
+
+1. Import `Smart-Campus-API.postman_collection.json`.
+2. Confirm collection variable `baseUrl` is set to `http://localhost:8080/api/v1`.
+3. Run requests in order:
+   - Discovery: `GET {{baseUrl}}`
+   - Rooms: create and fetch room
+   - Sensors: create sensor and filter by type
+   - Sensor Readings: add and fetch readings
+   - Error Cases: invalid room link, maintenance reading rejection, delete room with linked sensor
+4. Validate response codes and response bodies against expected behavior.
+5. Use built-in Postman test scripts in create/delete/readings requests for quick status verification.
+
+## 16. Quality Assurance
+
+Automated testing is implemented with JUnit 5 and Jersey Test Framework.
+
+Manual API testing was performed only in Postman using the project collection to verify normal flows and error scenarios (for example `403`, `409`, and `422` responses).
 
 Run tests:
 
+```bash
 mvn test
+```
 
-## Report and Viva Answer Support
+Validated scenarios include:
 
-### 1) JAX-RS resource lifecycle and in-memory data handling
+- Discovery metadata correctness.
+- Room payload validation rules.
+- Sensor creation requiring valid `roomId`.
+- Status normalization and default values for sensors.
+- Reading timestamp validation (`long` epoch milliseconds).
+- Reading blocked when sensor is in MAINTENANCE (`403`).
+- Sensor `currentValue` update after reading POST.
+- Duplicate reading ID conflict handling (`409`).
+- Room deletion conflict when sensors are linked (`409`).
+- Room deletion success when no sensors are linked (`204`).
 
-By default, JAX-RS resource classes are request-scoped, so a new resource instance can be created per request. In this project, persistent state is intentionally stored in static in-memory collections inside DataStore. This separates transient request handling from shared application data and makes lifecycle behavior predictable for coursework demos.
+## 17. Notes
 
-### 2) HATEOAS and hypermedia benefits
-
-The discovery endpoint provides resource links, helping clients navigate available endpoints without hardcoding every URI. This improves client decoupling and makes API evolution safer because discoverable links can be updated centrally.
-
-### 3) Returning room IDs vs full room objects
-
-Returning sensorIds within room keeps payloads small, avoids unnecessary nested data transfer, and prevents over-fetching. It also avoids accidental circular object graphs and keeps resource boundaries clear.
-
-### 4) Consequences of @Consumes(MediaType.APPLICATION_JSON) mismatch
-
-If a client sends an unsupported Content-Type while the resource expects JSON, request deserialization fails and the server can return a client error (typically 415 Unsupported Media Type or 400 depending on handler path). Declaring @Consumes clearly enforces contract correctness.
-
-### 5) Why query parameters are better for filtering than path segments
-
-Filtering (for example, /sensors?type=CO2) does not identify a different resource identity; it identifies a view of a collection. Query parameters are therefore the correct REST mechanism for optional filtering criteria.
-
-### 6) Benefits of sub-resource locator pattern
-
-Using /sensors/{id}/readings modeled via sub-resource locator keeps child-resource logic cohesive and context-aware. It naturally scopes reading operations to the parent sensor and keeps URI design hierarchical and intuitive.
-
-### 7) Why 422 is more accurate than 404 for linked resource validation
-
-For payloads that are syntactically valid but semantically invalid (for example, roomId references a non-existent room during sensor creation), 422 better communicates semantic validation failure than 404, which is typically for the requested endpoint/resource URI itself.
-
-### 8) Risks of exposing stack traces
-
-Exposing stack traces leaks internal class names, code paths, and implementation details that can aid misuse and reduce security posture. Sanitized error bodies are safer and professionally expected.
-
-### 9) Why filters are better for cross-cutting logging
-
-Filters apply uniformly to all endpoints, reducing duplication and guaranteeing consistent request/response logging behavior. This improves maintainability and keeps resource classes focused on business logic.
-
-### 10) DELETE idempotency explanation
-
-DELETE is idempotent because repeating the same delete request should not produce additional side effects after the resource is already removed. In practice, first call may return success, repeated calls may return not found, but server state remains unchanged after the first successful deletion.
+- Storage is fully in memory (`HashMap` + `ArrayList`) via `DataStore`.
+- No database is used.
+- All data resets when the application restarts.
