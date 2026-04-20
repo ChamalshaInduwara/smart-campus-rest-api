@@ -1,0 +1,307 @@
+{
+  "info": {
+    "_postman_id": "3f9c4d4a-b8a9-4bcf-a868-9cd3df8e5f3c",
+    "name": "Smart Campus REST API",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Discovery",
+      "item": [
+        {
+          "name": "GET {{baseUrl}}",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Rooms",
+      "item": [
+        {
+          "name": "GET {{baseUrl}}/rooms",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/rooms"
+          },
+          "response": []
+        },
+        {
+          "name": "POST {{baseUrl}}/rooms",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status code is 201\", function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id\": \"{{roomId}}\",\n  \"name\": \"Lab 101\",\n  \"capacity\": 40,\n  \"sensorIds\": []\n}"
+            },
+            "url": "{{baseUrl}}/rooms"
+          },
+          "response": []
+        },
+        {
+          "name": "GET {{baseUrl}}/rooms/{{roomId}}",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/rooms/{{roomId}}"
+          },
+          "response": []
+        },
+        {
+          "name": "DELETE {{baseUrl}}/rooms/{{roomId}}",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Delete room supports demo cleanup states\", function () {",
+                  "    pm.expect([200, 202, 204, 404, 409]).to.include(pm.response.code);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": "{{baseUrl}}/rooms/{{roomId}}"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Sensors",
+      "item": [
+        {
+          "name": "GET {{baseUrl}}/sensors",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/sensors"
+          },
+          "response": []
+        },
+        {
+          "name": "GET {{baseUrl}}/sensors?type={{sensorType}}",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/sensors?type={{sensorType}}"
+          },
+          "response": []
+        },
+        {
+          "name": "POST {{baseUrl}}/sensors",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status code is 201\", function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id\": \"{{sensorId}}\",\n  \"type\": \"{{sensorType}}\",\n  \"status\": \"ACTIVE\",\n  \"currentValue\": 0.0,\n  \"roomId\": \"{{roomId}}\"\n}"
+            },
+            "url": "{{baseUrl}}/sensors"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Sensor Readings",
+      "item": [
+        {
+          "name": "GET {{baseUrl}}/sensors/{{sensorId}}/readings",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/sensors/{{sensorId}}/readings"
+          },
+          "response": []
+        },
+        {
+          "name": "POST {{baseUrl}}/sensors/{{sensorId}}/readings",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status code is 201\", function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id\": \"reading-1\",\n  \"timestamp\": 1713607200000,\n  \"value\": 550.5\n}"
+            },
+            "url": "{{baseUrl}}/sensors/{{sensorId}}/readings"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Error Cases",
+      "item": [
+        {
+          "name": "POST sensor with invalid roomId (expect 422 or 400)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status code is 400 or 422\", function () {",
+                  "    pm.expect([400, 422]).to.include(pm.response.code);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id\": \"sensor-invalid-room\",\n  \"type\": \"{{sensorType}}\",\n  \"status\": \"ACTIVE\",\n  \"currentValue\": 0.0,\n  \"roomId\": \"room-does-not-exist\"\n}"
+            },
+            "url": "{{baseUrl}}/sensors"
+          },
+          "response": []
+        },
+        {
+          "name": "POST reading to MAINTENANCE sensor (expect 403)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status code is 403\", function () {",
+                  "    pm.response.to.have.status(403);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id\": \"reading-maint-1\",\n  \"timestamp\": 1713607200000,\n  \"value\": 500.0\n}"
+            },
+            "url": "{{baseUrl}}/sensors/sensor-maint-1/readings",
+            "description": "Ensure sensor-maint-1 exists and has status MAINTENANCE before running this request."
+          },
+          "response": []
+        },
+        {
+          "name": "DELETE room with linked sensor (expect 409)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status code is 409\", function () {",
+                  "    pm.response.to.have.status(409);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": "{{baseUrl}}/rooms/{{roomId}}",
+            "description": "Run this when {{roomId}} has at least one linked sensor to demonstrate RoomNotEmpty behavior."
+          },
+          "response": []
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8080/api/v1"
+    },
+    {
+      "key": "roomId",
+      "value": "room-101"
+    },
+    {
+      "key": "sensorId",
+      "value": "sensor-1"
+    },
+    {
+      "key": "sensorType",
+      "value": "CO2"
+    }
+  ]
+}
