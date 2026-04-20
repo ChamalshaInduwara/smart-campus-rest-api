@@ -145,41 +145,98 @@ Validation:
 - reading ID must be unique per sensor
 - successful POST updates sensor currentValue
 
-## Working curl Commands
+## Working Postman Requests
+
+Use a Postman collection with base URL:
+
+http://localhost:8080/api/v1
+
+Set header Content-Type: application/json for POST requests.
 
 1. Discovery
 
-   curl -X GET http://localhost:8080/api/v1
+- Method: GET
+- URL: http://localhost:8080/api/v1
+- Expected status: 200
 
 2. Create room
 
-   curl -X POST http://localhost:8080/api/v1/rooms \
-    -H "Content-Type: application/json" \
-    -d "{\"id\":\"room-101\",\"name\":\"Lab 101\",\"capacity\":40,\"sensorIds\":[]}"
+- Method: POST
+- URL: http://localhost:8080/api/v1/rooms
+- Body (raw JSON):
+
+  {
+  "id": "room-101",
+  "name": "Lab 101",
+  "capacity": 40,
+  "sensorIds": []
+  }
+
+- Expected status: 201
 
 3. Get all rooms
 
-   curl -X GET http://localhost:8080/api/v1/rooms
+- Method: GET
+- URL: http://localhost:8080/api/v1/rooms
+- Expected status: 200
 
 4. Create sensor linked to room
 
-   curl -X POST http://localhost:8080/api/v1/sensors \
-    -H "Content-Type: application/json" \
-    -d "{\"id\":\"sensor-1\",\"type\":\"CO2\",\"status\":\"ACTIVE\",\"currentValue\":0.0,\"roomId\":\"room-101\"}"
+- Method: POST
+- URL: http://localhost:8080/api/v1/sensors
+- Body (raw JSON):
+
+  {
+  "id": "sensor-1",
+  "type": "CO2",
+  "status": "ACTIVE",
+  "currentValue": 0.0,
+  "roomId": "room-101"
+  }
+
+- Expected status: 201
 
 5. Filter sensors by type
 
-   curl -X GET "http://localhost:8080/api/v1/sensors?type=CO2"
+- Method: GET
+- URL: http://localhost:8080/api/v1/sensors?type=CO2
+- Expected status: 200
 
 6. Add reading with long timestamp (epoch ms)
 
-   curl -X POST http://localhost:8080/api/v1/sensors/sensor-1/readings \
-    -H "Content-Type: application/json" \
-    -d "{\"id\":\"reading-1\",\"timestamp\":1713607200000,\"value\":550.5}"
+- Method: POST
+- URL: http://localhost:8080/api/v1/sensors/sensor-1/readings
+- Body (raw JSON):
 
-7. Attempt room deletion with linked sensor (expects 409)
+  {
+  "id": "reading-1",
+  "timestamp": 1713607200000,
+  "value": 550.5
+  }
 
-   curl -X DELETE http://localhost:8080/api/v1/rooms/room-101
+- Expected status: 201
+
+7. Attempt room deletion with linked sensor
+
+- Method: DELETE
+- URL: http://localhost:8080/api/v1/rooms/room-101
+- Expected status: 409
+
+8. Validate unmatched path handling
+
+- Method: GET
+- URLs:
+  - http://localhost:8080/api/v1/abc
+  - http://localhost:8080/api/v1/rooms%20/
+  - http://localhost:8080/api/v1/invalid
+- Expected status: 404
+- Expected body:
+
+  {
+  "error": "Not found",
+  "message": "Requested resource does not exist",
+  "status": 404
+  }
 
 ## Error Handling
 
@@ -198,6 +255,7 @@ Exception mapping:
 - RoomNotEmptyException -> 409 Conflict
 - LinkedResourceNotFoundException -> 422 Unprocessable Entity
 - SensorUnavailableException -> 403 Forbidden
+- NotFoundExceptionMapper -> 404 Not Found
 - GlobalExceptionMapper -> 500 Internal Server Error
 
 Security and robustness note:
