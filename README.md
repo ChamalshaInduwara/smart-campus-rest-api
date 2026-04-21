@@ -295,7 +295,84 @@ Postman test flow used:
 4. Validate response codes and response bodies against expected behavior.
 5. Use built-in Postman test scripts in create/delete/readings requests for quick status verification.
 
-## 16. Quality Assurance
+## 16. Quick cURL Commands
+
+Set a reusable base URL variable first:
+
+```bash
+BASE_URL="http://localhost:8080/api/v1"
+```
+
+1. Get discovery metadata:
+
+```bash
+curl -i "$BASE_URL"
+```
+
+2. Create a room:
+
+```bash
+curl -i -X POST "$BASE_URL/rooms" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "id": "room-a101",
+    "name": "Engineering Lab A101",
+    "capacity": 40,
+    "sensorIds": []
+  }'
+```
+
+3. List all rooms:
+
+```bash
+curl -i "$BASE_URL/rooms"
+```
+
+4. Create a sensor linked to a room:
+
+```bash
+curl -i -X POST "$BASE_URL/sensors" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "id": "sensor-co2-1",
+    "roomId": "room-a101",
+    "type": "CO2",
+    "status": "ACTIVE",
+    "currentValue": 0.0
+  }'
+```
+
+5. Filter sensors by type:
+
+```bash
+curl -i "$BASE_URL/sensors?type=CO2"
+```
+
+6. Add a reading for a sensor:
+
+```bash
+curl -i -X POST "$BASE_URL/sensors/sensor-co2-1/readings" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "id": "reading-1",
+    "timestamp": 1713657600000,
+    "value": 612.7
+  }'
+```
+
+7. List readings for a sensor:
+
+```bash
+curl -i "$BASE_URL/sensors/sensor-co2-1/readings"
+```
+
+8. Delete a room by ID:
+
+```bash
+curl -i -X DELETE "$BASE_URL/rooms/room-a101"
+```
+
+## 17. Quality Assurance
 
 Automated testing is implemented with JUnit 5 and Jersey Test Framework.
 
@@ -320,7 +397,7 @@ Validated scenarios include:
 - Room deletion conflict when sensors are linked (`409`).
 - Room deletion success when no sensors are linked (`204`).
 
-## 17. Notes
+## 18. Notes
 
 - Storage is fully in memory (`HashMap` + `ArrayList`) via `DataStore`.
 - No database is used.
